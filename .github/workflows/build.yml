@@ -214,9 +214,9 @@ jobs:
           tagg=${{ env.BRANCHES }}
           [[ -z $tagg ]] && tagg=main
           git clone -b $tagg https://github.com/EasyTier/EasyTier /opt/et
-          ls -l easytier-web/frontend/dist
+          ls -lR easytier-web/frontend/dist
           cp -rf easytier-web/frontend/dist /opt/et/easytier-web/frontend/dist
-          ls -l /opt/et/easytier-web/frontend/dist
+          ls -lR /opt/et/easytier-web/frontend/dist
           cd /opt/et
           rm -rf .cargo/config.toml
           #添加交叉编译配置

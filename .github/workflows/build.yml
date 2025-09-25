@@ -86,9 +86,9 @@ jobs:
 
       - name: 打包静态页面
         run: |
-          sed -i "s|'en'|'cn'|" easytier-web/frontend/src/App.vue
-          sed -i "s/| 'en'/| 'cn'/g" easytier-web/frontend-lib/src/modules/i18n.ts
-          sed -i "s|'en' ? 'cn' : 'en'|'cn' ? 'en' : 'cn'|g" easytier-web/frontend-lib/src/modules/i18n.ts
+          #sed -i "s|'en'|'cn'|" easytier-web/frontend/src/App.vue
+          #sed -i "s/| 'en'/| 'cn'/g" easytier-web/frontend-lib/src/modules/i18n.ts
+          #sed -i "s|'en' ? 'cn' : 'en'|'cn' ? 'en' : 'cn'|g" easytier-web/frontend-lib/src/modules/i18n.ts
           
           pnpm -r install
           pnpm -r --filter "./easytier-web/*"  build

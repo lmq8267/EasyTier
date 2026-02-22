@@ -70,7 +70,7 @@ jobs:
     needs: check
     if: ${{ github.event.inputs.bj == 'true' || (github.event.inputs.bj != 'true' && needs.check.outputs.ver != needs.check.outputs.cver) }}
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
         with:
           repository: 'EasyTier/EasyTier'
 
@@ -171,8 +171,8 @@ jobs:
         run: |
           mkdir -p /opt/musl_gcc
           rustup set auto-self-update disable
-          rustup install 1.89
-          rustup default 1.89
+          rustup install 1.93
+          rustup default 1.93
           MUSL_TARGET=$TARGET
           sudo apt-get update && sudo apt-get install -qq musl-tools libappindicator3-dev llvm clang
           if [[ $TARGET =~ ^mips.*$ || $TARGET =~ ^mipsel.*$ ]]; then
@@ -190,8 +190,8 @@ jobs:
             ar x libgcc.a _ctzsi2.o _clz.o _bswapsi2.o
             ar rcs libctz.a _ctzsi2.o _clz.o _bswapsi2.o
 
-            rustup toolchain install nightly-x86_64-unknown-linux-gnu
-            rustup component add rust-src --toolchain nightly-x86_64-unknown-linux-gnu
+            rustup toolchain install nightly-2026-02-02-x86_64-unknown-linux-gnu
+            rustup component add rust-src --toolchain nightly-2026-02-02-x86_64-unknown-linux-gnu
             # https://github.com/rust-lang/rust/issues/128808
             # remove it after Cargo or rustc fix this.
             RUST_LIB_SRC=$HOME/.rustup/toolchains/nightly-x86_64-unknown-linux-gnu/lib/rustlib/src/rust/

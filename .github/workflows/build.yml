@@ -295,8 +295,8 @@ jobs:
             export BINDGEN_EXTRA_CLANG_ARGS=--sysroot=$(readlink -f /opt/musl_gcc/sysroot)
           fi
           if [[ $TARGET =~ ^mips.*$ ]]; then
-             cargo +nightly build -r --target $TARGET -Z build-std=std,panic_abort --package=easytier-web --features=embed
-             cargo +nightly build -r --target $TARGET -Z build-std=std,panic_abort --package=easytier --features=jemalloc
+             cargo +nightly-2026-02-02 build -r --target $TARGET -Z build-std=std,panic_abort --package=easytier-web --features=embed
+             cargo +nightly-2026-02-02 build -r --target $TARGET -Z build-std=std,panic_abort --package=easytier --features=jemalloc
           else
              if [[ $OS =~ ^windows.*$ ]]; then
               SUFFIX=.exe

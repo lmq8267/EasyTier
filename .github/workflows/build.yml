@@ -290,6 +290,13 @@ jobs:
 
           sed -i 's/rust_i18n::i18n!("locales", fallback = "en");/rust_i18n::i18n!("locales", fallback = "zh-CN");/' ./easytier-web/src/main.rs
           sed -i 's/let locale = sys_locale::get_locale().unwrap_or_else(|| String::from("en-US"));/let locale = String::from("zh-CN");/' ./easytier-web/src/main.rs
+          if [[ $TARGET =~ ^mips.*$ ]]; then
+            # mips 没有 64 位原子，std 的 AtomicU64 不存在（2026-11-18 编译报 E0432），改用 workspace 已有的 atomic-shim
+            # 用首行插入而不是按 dashmap 行插入，避免上游改动 use 语句后 sed 失效
+            sed -i 's/atomic::{AtomicU32, AtomicU64, Ordering}/atomic::{AtomicU32, Ordering}/' ./easytier-web/src/client_manager/mod.rs
+            sed -i '1i use atomic_shim::AtomicU64;' ./easytier-web/src/client_manager/mod.rs
+            sed -i '/^\[dependencies\]$/a atomic-shim.workspace = true' ./easytier-web/Cargo.toml
+          fi
           if [[ -d "/opt/musl_gcc/sysroot" ]]; then
             export BINDGEN_EXTRA_CLANG_ARGS=--sysroot=$(readlink -f /opt/musl_gcc/sysroot)
           fi

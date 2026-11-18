@@ -116,24 +116,24 @@ jobs:
           echo "ENTRYPOINT [\"/usr/bin/easytier.sh\"]" >> ./Dockerfile
           
       - name: Setup QEMU
-        uses: dbhi/qus/action@main
+        uses: docker/setup-qemu-action@master
       - name: 设置 Docker Buildx
-        uses: docker/setup-buildx-action@v3
+        uses: docker/setup-buildx-action@master
       - name: Login to Docker Hub
         if: github.repository_owner == 'lmq8267' # 判断仓库所有者是否是 lmq8267 才执行
-        uses: docker/login-action@v3
+        uses: docker/login-action@master
         with:
          username: lmq8267
          password: ${{ secrets.DOCKER_TOKEN }}
       - name: login github container registry
-        uses: docker/login-action@v3
+        uses: docker/login-action@master
         with:
           registry: ghcr.io
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
       - name: Build and Push Docker Latest Image
         if: github.event.inputs.latest == 'true' && github.repository_owner == 'lmq8267' # 判断仓库所有者是否是 lmq8267 才执行
-        uses: docker/build-push-action@v5
+        uses: docker/build-push-action@master
         with:
          push: true
          tags: |
@@ -145,7 +145,7 @@ jobs:
          context: /opt
       - name: Build and Push Docker Image
         if: github.event.inputs.latest == 'false' && github.repository_owner == 'lmq8267' # 判断仓库所有者是否是 lmq8267 才执行
-        uses: docker/build-push-action@v5
+        uses: docker/build-push-action@master
         with:
          push: true
          tags: |
@@ -175,7 +175,7 @@ jobs:
         run: echo "build_time=$(date '+%Y年%m月%d日%H:%M:%S' | jq -sRr @uri)" >> $GITHUB_ENV
       - name: release
         if: github.event.inputs.rel == 'true'
-        uses: softprops/action-gh-release@v2
+        uses: lmq8267/action-gh-release@master
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
           body: |
@@ -191,18 +191,18 @@ jobs:
           tag_name: ${{ env.tags }}
           files: /opt/dk/*
 
- scp:
-    runs-on: ubuntu-latest
-    needs: build
-    steps:
-      - name: 更新服务器
-        if: github.repository_owner == 'lmq826700' # 判断仓库所有者是否是 lmq8267 才执行
-        env:
-          #读取帐号密码的环境变量
-          SSH_PRIVATE_KEY: ${{ secrets.SSH_PRIVATE_KEY }}
-          USER: ${{ secrets.SERVER }}
-          CMD: ${{ secrets.CMD }}
-        run: |
-          #远程ssh执行更新命令
-          sudo apt-get install -y sshpass
-          sshpass -p "${{ secrets.SSH_PRIVATE_KEY }}" ssh -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null "${{ secrets.SERVER }}" "${{ secrets.CMD }}"
+ #scp:
+ #   runs-on: ubuntu-latest
+ #   needs: build
+ #   steps:
+ #     - name: 更新服务器
+ #       if: github.repository_owner == 'lmq826700' # 判断仓库所有者是否是 lmq8267 才执行
+ #       env:
+ #         #读取帐号密码的环境变量
+ #         SSH_PRIVATE_KEY: ${{ secrets.SSH_PRIVATE_KEY }}
+ #         USER: ${{ secrets.SERVER }}
+ #         CMD: ${{ secrets.CMD }}
+ #       run: |
+ #         #远程ssh执行更新命令
+ #         sudo apt-get install -y sshpass
+ #         sshpass -p "${{ secrets.SSH_PRIVATE_KEY }}" ssh -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null "${{ secrets.SERVER }}" "${{ secrets.CMD }}"

@@ -74,24 +74,20 @@ jobs:
         with:
           repository: 'EasyTier/EasyTier'
 
-      - uses: actions/setup-node@main
-        with:
-          node-version: 22
-
-      - name: 安装 pnpm
-        uses: pnpm/action-setup@v3
-        with:
-          version: 10
-          run_install: false
-
-      - name: 打包静态页面
+      - name: 修改默认语言为中文
         run: |
+          # 默认语言改成中文：入口默认值、i18n 默认值以及切换方向
           sed -i "s|'en'|'cn'|" easytier-web/frontend/src/App.vue
-          sed -i "s/| 'en'/| 'cn'/g" easytier-web/frontend-lib/src/modules/i18n.ts
+          sed -i "s/|| 'en'/|| 'cn'/g" easytier-web/frontend-lib/src/modules/i18n.ts
           sed -i "s|'en' ? 'cn' : 'en'|'cn' ? 'en' : 'cn'|g" easytier-web/frontend-lib/src/modules/i18n.ts
-          
-          pnpm -r install
-          pnpm -r --filter "./easytier-web/*"  build
+
+      # 与官方 build_web 一致：action 内部负责 rust 1.95 + wasm32 目标 + wasm-pack + protoc，
+      # 然后串行构建 easytier-web/* 并把 config-generator 产物复制进 frontend/dist
+      - name: Setup Frontend Environment
+        uses: ./.github/actions/prepare-pnpm
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          build-filter: './easytier-web/*'
 
       - name: 上传静态页面
         uses: actions/upload-artifact@v4
@@ -283,14 +279,14 @@ jobs:
           "-l", "gcc"]      
           EOF
           #改成只使用中文帮助信息
-          sed -i 's/let locale = sys_locale::get_locale().unwrap_or_else(|| String::from("en-US"));/let locale = String::from("zh-CN");/' ./easytier/src/easytier-core.rs
+          # 上游把 locale 初始化从 easytier-core.rs 挪到了 core.rs（2026-11 核对），两处都要改；cli 同样固定中文
+          sed -i 's/let locale = sys_locale::get_locale().unwrap_or_else(|| String::from("en-US"));/let locale = String::from("zh-CN");/' ./easytier/src/core.rs
+          sed -i 's/let locale = sys_locale::get_locale().unwrap_or_else(|| String::from("en-US"));/let locale = String::from("zh-CN");/' ./easytier/src/easytier-cli.rs
           sed -i 's/rust_i18n::i18n!("locales", fallback = "en");/rust_i18n::i18n!("locales", fallback = "zh-CN");/' ./easytier/src/easytier-core.rs
           sed -i 's/rust_i18n::i18n!("locales", fallback = "en");/rust_i18n::i18n!("locales", fallback = "zh-CN");/' ./easytier/src/easytier-cli.rs
-          sed -i 's/git_version::git_version/env/' ./easytier/src/common/constants.rs
-          sed -i '/args = \["--abbrev=8", "--always", "--dirty=~"\],/d' ./easytier/src/common/constants.rs
-          sed -i '/prefix = concat!(env!("CARGO_PKG_VERSION"), "-"),/d' ./easytier/src/common/constants.rs
-          sed -i '/suffix = "",/d' ./easytier/src/common/constants.rs
-          sed -i 's/fallback = env!("CARGO_PKG_VERSION")/"CARGO_PKG_VERSION"/' ./easytier/src/common/constants.rs
+          # 版本号只保留 CARGO_PKG_VERSION：上游 constants.rs 已改成多行 git_version 宏，逐行替换会生成非法代码
+          sed -i '/^pub const EASYTIER_VERSION/,/^);/d' ./easytier/src/common/constants.rs
+          printf '\npub const EASYTIER_VERSION: &str = env!("CARGO_PKG_VERSION");\n' >> ./easytier/src/common/constants.rs
 
           sed -i 's/rust_i18n::i18n!("locales", fallback = "en");/rust_i18n::i18n!("locales", fallback = "zh-CN");/' ./easytier-web/src/main.rs
           sed -i 's/let locale = sys_locale::get_locale().unwrap_or_else(|| String::from("en-US"));/let locale = String::from("zh-CN");/' ./easytier-web/src/main.rs
@@ -355,11 +351,6 @@ jobs:
           remove-haskell: 'true'
           remove-codeql: 'true'
           remove-docker-images: 'true'
-      - name: 下载静态页面
-        uses: actions/download-artifact@v4
-        with:
-          name: easytier-web-dashboard
-          path: easytier-web/frontend/dist/
       - name: 编译FreeBSD
         if: ${{ matrix.TARGET == 'x86_64-unknown-freebsd' }}
         uses: cross-platform-actions/action@v0.23.0
@@ -381,22 +372,22 @@ jobs:
               curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y
               source $HOME/.cargo/env
               rustup set auto-self-update disable
-              rustup install 1.89
-              rustup default 1.89
+              rustup install 1.95
+              rustup default 1.95
               echo "编译版本：$tagg"
               git clone -b $tagg https://github.com/EasyTier/EasyTier /tmp/et
               ls
               cp -rf ./easytier-web/frontend/dist /tmp/et/easytier-web/frontend/dist
               cd /tmp/et
               #改成只使用中文帮助信息
-              sed -i '' 's/let locale = sys_locale::get_locale().unwrap_or_else(|| String::from("en-US"));/let locale = String::from("zh-CN");/' easytier/src/easytier-core.rs
+              # 上游把 locale 初始化从 easytier-core.rs 挪到了 core.rs（2026-11 核对），两处都要改；cli 同样固定中文
+              sed -i '' 's/let locale = sys_locale::get_locale().unwrap_or_else(|| String::from("en-US"));/let locale = String::from("zh-CN");/' easytier/src/core.rs
+              sed -i '' 's/let locale = sys_locale::get_locale().unwrap_or_else(|| String::from("en-US"));/let locale = String::from("zh-CN");/' ./easytier/src/easytier-cli.rs
               sed -i '' 's/rust_i18n::i18n!("locales", fallback = "en");/rust_i18n::i18n!("locales", fallback = "zh-CN");/' ./easytier/src/easytier-core.rs
               sed -i '' 's/rust_i18n::i18n!("locales", fallback = "en");/rust_i18n::i18n!("locales", fallback = "zh-CN");/' ./easytier/src/easytier-cli.rs
-              sed -i '' 's/git_version::git_version/env/' ./easytier/src/common/constants.rs
-              sed -i '' '/args = \["--abbrev=8", "--always", "--dirty=~"\],/d' ./easytier/src/common/constants.rs
-              sed -i '' '/prefix = concat!(env!("CARGO_PKG_VERSION"), "-"),/d' ./easytier/src/common/constants.rs
-              sed -i '' '/suffix = "",/d' ./easytier/src/common/constants.rs
-              sed -i '' 's/fallback = env!("CARGO_PKG_VERSION")/"CARGO_PKG_VERSION"/' ./easytier/src/common/constants.rs
+              # 版本号只保留 CARGO_PKG_VERSION：上游 constants.rs 已改成多行 git_version 宏，逐行替换会生成非法代码
+              sed -i '' '/^pub const EASYTIER_VERSION/,/^);/d' ./easytier/src/common/constants.rs
+              printf '\npub const EASYTIER_VERSION: &str = env!("CARGO_PKG_VERSION");\n' >> ./easytier/src/common/constants.rs
               export CC=clang
               export CXX=clang++
               export CARGO_TERM_COLOR=always
